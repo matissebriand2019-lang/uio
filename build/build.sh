@@ -1,32 +1,14 @@
 #!/bin/bash
-# ============================================================
 # build.sh — Compile cubiomes → WASM
-# ============================================================
-# PRÉREQUIS :
-#   1. Emscripten installé :
-#        git clone https://github.com/emscripten-core/emsdk.git
-#        cd emsdk && ./emsdk install latest && ./emsdk activate latest
-#        source ./emsdk_env.sh
-#
-#   2. cubiomes cloné DANS ce dossier build/ :
-#        git clone https://github.com/Cubitect/cubiomes cubiomes
-#
-# PUIS lancer ce script depuis le dossier build/ :
-#        cd build && bash build.sh
-# ============================================================
-
 set -e
 
 echo "=== MineGuide — Compilation cubiomes → WASM ==="
 
-# Vérifie emcc
 if ! command -v emcc &>/dev/null; then
-  echo "ERREUR : emcc non trouvé. Active Emscripten d'abord :"
-  echo "  source /path/to/emsdk/emsdk_env.sh"
+  echo "ERREUR : emcc non trouvé."
   exit 1
 fi
 
-# Vérifie cubiomes
 if [ ! -d "cubiomes" ]; then
   echo "Clone cubiomes..."
   git clone --depth=1 https://github.com/Cubitect/cubiomes cubiomes
@@ -35,18 +17,16 @@ fi
 echo "Version cubiomes :"
 head -1 cubiomes/README.md 2>/dev/null || echo "(inconnue)"
 
+# Collecte tous les .c de cubiomes automatiquement (compatible toutes versions)
+CUBIOMES_SOURCES=$(find cubiomes -maxdepth 1 -name "*.c" | grep -v tests.c | tr '\n' ' ')
+echo "Sources : $CUBIOMES_SOURCES"
+
 echo ""
 echo "Compilation..."
 
 emcc \
   cubiomes_wrapper.c \
-  cubiomes/generator.c \
-  cubiomes/biomes.c \
-  cubiomes/layers.c \
-  cubiomes/noise.c \
-  cubiomes/util.c \
-  cubiomes/finders.c \
-  cubiomes/quadbase.c \
+  $CUBIOMES_SOURCES \
   -I cubiomes \
   -o ../assets/js/cubiomes.js \
   -s WASM=1 \
@@ -63,8 +43,5 @@ emcc \
 
 echo ""
 echo "✅ Compilation réussie !"
-echo "   Fichiers générés :"
-echo "     ../assets/js/cubiomes.js"
-echo "     ../assets/js/cubiomes.wasm"
-echo ""
-echo "Déplace-les si besoin, puis ouvre seedmap.html dans le navigateur."
+echo "   ../assets/js/cubiomes.js"
+echo "   ../assets/js/cubiomes.wasm"
