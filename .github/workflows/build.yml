@@ -1,1 +1,44 @@
+name: Compile cubiomes → WASM
 
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Clone cubiomes dans build/
+        run: git clone --depth=1 https://github.com/Cubitect/cubiomes build/cubiomes
+
+      - name: Vérifier les sources
+        run: |
+          echo "=== Sources cubiomes ==="
+          ls build/cubiomes/*.c
+          echo "=== Wrapper ==="
+          ls build/cubiomes_wrapper.c
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.56
+
+      - name: Compiler cubiomes → WASM
+        run: cd build && bash build.sh
+
+      - name: Vérifier les fichiers générés
+        run: |
+          ls -lh assets/js/cubiomes.js assets/js/cubiomes.wasm
+          wc -c assets/js/cubiomes.wasm
+
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cubiomes-wasm
+          path: |
+            assets/js/cubiomes.js
+            assets/js/cubiomes.wasm
